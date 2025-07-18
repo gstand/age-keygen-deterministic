@@ -68,6 +68,6 @@ Each 32 byte HMAC-SHA256 output is converted to Bech32 format and written to std
 
 Please note that there are some **cryptographic limitations** which this toy project does not care about:
 
-- This program does not attempt to clear any secrets from RAM before it exits. 
+- ~~This program does not attempt to clear any secrets from RAM before it exits.~~ This program zeroes out most cryptographic content from RAM on drop... with some exceptions due to upstream crate restrictions.
 - This program does not make any guarantees about side-channel resistance.
 - No clamping of the X25519 key is done - but as far as I know, ```age-keygen``` doesn't do it either.
