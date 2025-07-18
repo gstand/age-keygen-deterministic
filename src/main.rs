@@ -75,8 +75,14 @@ fn main() {
     let opt = Opt::from_args();
     let (offset, count) = (opt.offset, opt.count);
     let offset_end = offset
-        .checked_add(count)
-        .expect("Integer overflow during offset calculation.");
+        .checked_add(count);
+
+    if let None = offset_end {
+        eprintln!("Integer overflow occured when adding count {count} to offset {offset}; please reduce your values to be within the bounds of a u64.");
+        std::process::exit(1); // no sensitive data initialized before this call so no destructors need to be called.
+    }
+
+    let offset_end = offset_end.unwrap(); // infalliable
 
     eprint!("Enter passphrase: ");
 
@@ -87,7 +93,9 @@ fn main() {
     eprint!("\n");
 
     if passphrase.unsecure().len() < 16 {
-        panic!("Passphrase must be at least 16 characters.");
+        eprintln!("Passphrase must be at least 16 characters.");
+        drop(passphrase);
+        std::process::exit(1);
     }
 
     let agk = AgeKeyGenerator::new(passphrase);
