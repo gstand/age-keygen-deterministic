@@ -1,29 +1,28 @@
 use std::io::{stdin, stdout};
 
-use argon2::{self, Config, Variant, Version};
-use bech32::{self, u5, ToBase32, Variant as Bech32Variant};
+use argon2::{self, Config, ThreadMode, Variant, Version};
+use bech32::{self, Bech32, Hrp};
 use hmac::{Hmac, Mac};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 use secure_string::SecureString;
 use sha2::Sha256;
-use structopt::StructOpt;
+use clap::Parser;
 use termion::input::TermRead;
 
-#[derive(Debug, StructOpt)]
-#[structopt(
-    name = "age-keygen-deterministic",
-    about = "Tool for deterministic age key generation from passphrase.",
-    author = "Klaus Eisentraut",
-    version = "0.3"
+#[derive(Parser, Debug)]
+#[command(
+    about,
+    author,
+    version
 )]
 struct Opt {
-    #[structopt(default_value = "0", short, long)]
+    #[arg(default_value = "0", short, long)]
     /// optional u64 offset for index of keys
     offset: u64,
-    #[structopt(default_value = "1", short, long)]
+    #[arg(default_value = "1", short, long)]
     /// optional number of secret keys which should be created
     count: u64,
-    #[structopt(short, long)]
+    #[arg(short, long)]
     /// disables the seperator comments prefixed to generated key(s)
     no_seperators: bool
 }
@@ -43,7 +42,7 @@ impl AgeKeyGenerator {
             mem_cost: 65536,
             time_cost: 10,
             lanes: 2,
-            //thread_mode: ThreadMode::Parallel,
+            thread_mode: ThreadMode::Parallel,
             secret: &[],
             ad: &[],
             hash_length: 64,
@@ -58,21 +57,16 @@ impl AgeKeyGenerator {
         let mut hmac = Hmac::<Sha256>::new_from_slice(&self.master_key).unwrap();
         hmac.update(&index.to_be_bytes());
         let mut key = hmac.finalize().into_bytes();
-        let mut key_u5 = key.to_base32();
-        let key_b = SecureString::from(bech32::encode("AGE-SECRET-KEY-", &key_u5, Bech32Variant::Bech32).unwrap());
-        let ret = SecureString::from(key_b.unsecure().to_uppercase());
+        let ret = SecureString::from(bech32::encode::<Bech32>(Hrp::parse("AGE-SECRET-KEY-").unwrap(), &key).unwrap().to_uppercase());
         for byte in &mut key {
             *byte = 0;
-        }
-        for byte in &mut key_u5 {
-            *byte = u5::try_from_u8(0).unwrap();
         }
         ret
     }
 }
 
 fn main() {
-    let opt = Opt::from_args();
+    let opt = Opt::parse();
     let (offset, count) = (opt.offset, opt.count);
     let offset_end = offset
         .checked_add(count);

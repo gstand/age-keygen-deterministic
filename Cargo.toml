@@ -1,14 +1,19 @@
 [package]
 name = "age-keygen-deterministic"
-version = "0.4.0"
+version = "0.5.0"
+description = "A simple Rust CLI tool to derive an age private key from a passphrase."
+authors = [
+  "Klaus Eisentraut",
+  "Garret Stand <gstand@gstand.me>"
+]
 edition = "2021"
 
 [dependencies]
-rust-argon2 = "2.1.0"
-bech32 = "0.9.1"
-structopt = { version = "0.3.26", default-features = false }
-sha2 = "0.10.8"
+rust-argon2 = "3.0.0"
+bech32 = "0.11.0"
+sha2 = "0.10.9"
 hmac = "0.12.1"
 termion = "4.0.5"
 zeroize = { version = "1.8.1", features = ["derive"] }
 secure-string = "0.3.0"
+clap = { version = "4.5.41", features = ["derive"] }
