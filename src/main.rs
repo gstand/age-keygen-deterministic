@@ -1,4 +1,4 @@
-use std::io::{stdin, stdout};
+use std::io::{stdin, BufRead, IsTerminal};
 
 use argon2::{self, Config, ThreadMode, Variant, Version};
 use bech32::{self, Bech32, Hrp};
@@ -7,7 +7,6 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 use secure_string::SecureString;
 use sha2::Sha256;
 use clap::Parser;
-use termion::input::TermRead;
 
 #[derive(Parser, Debug)]
 #[command(
@@ -78,14 +77,23 @@ fn main() {
 
     let offset_end = offset_end.unwrap(); // infalliable
 
-    eprint!("Enter passphrase: ");
-
-    let mut stdout = stdout().lock();
     let mut stdin = stdin().lock();
-
-    let passphrase = SecureString::from(stdin.read_passwd(&mut stdout).unwrap_or(Some("".into())).unwrap_or("".into()));
-    eprint!("\n");
-
+    let passphrase: SecureString;
+    
+    if stdin.is_terminal() {
+        passphrase = SecureString::from(rpassword::prompt_password("Enter passphrase: ").unwrap_or("".into()));
+    } else {
+        passphrase = SecureString::from({
+            let mut s = String::new();
+            let res = BufRead::read_line(&mut stdin, &mut s);
+            if let Err(_) = res {
+                "".into()
+            } else {
+                s
+            }
+        });
+    }
+        
     if passphrase.unsecure().len() < 16 {
         eprintln!("Passphrase must be at least 16 characters.");
         drop(passphrase);
