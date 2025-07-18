@@ -23,7 +23,10 @@ struct Opt {
     count: u64,
     #[arg(short, long)]
     /// disables the seperator comments prefixed to generated key(s)
-    no_seperators: bool
+    no_seperators: bool,
+    #[arg(default_value = "Enter a passphrase", short, long)]
+    /// prompt to use for passphrase prompt; useful in scripting scenarios
+    prompt: String,
 }
 
 #[derive(Zeroize, ZeroizeOnDrop)]
@@ -81,7 +84,7 @@ fn main() {
     let passphrase: SecureString;
     
     if stdin.is_terminal() {
-        passphrase = SecureString::from(rpassword::prompt_password("Enter passphrase: ").unwrap_or("".into()));
+        passphrase = SecureString::from(rpassword::prompt_password(format!("{}: ", opt.prompt)).unwrap_or("".into()));
     } else {
         passphrase = SecureString::from({
             let mut s = String::new();
