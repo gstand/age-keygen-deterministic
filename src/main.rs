@@ -21,6 +21,9 @@ struct Opt {
     #[structopt(default_value = "1", short, long)]
     /// optional number of secret keys which should be created
     count: u64,
+    #[structopt(short, long)]
+    /// disables the seperator comments prefixed to generated key(s)
+    no_seperators: bool
 }
 
 struct AgeKeyGenerator {
@@ -79,7 +82,9 @@ fn main() {
 
     let agk = AgeKeyGenerator::new(passphrase);
     for i in offset..offset_end {
-        println!("# secret key {:} below", i);
+        if !opt.no_seperators {
+            println!("# secret key {:} below", i);
+        }
         println!("{:}", agk.get_key(i));
     }
 }
