@@ -1,8 +1,11 @@
+use std::io::{stdin, stdout};
+
 use argon2::{self, Config, Variant, Version};
 use bech32::{self, ToBase32, Variant as Bech32Variant};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 use structopt::StructOpt;
+use termion::input::TermRead;
 
 #[derive(Debug, StructOpt)]
 #[structopt(
@@ -62,7 +65,14 @@ fn main() {
         .checked_add(count)
         .expect("Integer overflow during offset calculation.");
 
-    let passphrase = rpassword::prompt_password("Enter passphrase: ").unwrap();
+    eprint!("Enter passphrase: ");
+
+    let mut stdout = stdout().lock();
+    let mut stdin = stdin().lock();
+
+    let passphrase = stdin.read_passwd(&mut stdout).unwrap_or(Some("".into())).unwrap_or("".into());
+    eprint!("\n");
+
     if passphrase.as_bytes().len() < 16 {
         panic!("Passphrase must be at least 16 characters.");
     }
